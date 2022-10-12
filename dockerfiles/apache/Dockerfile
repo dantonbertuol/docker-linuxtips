@@ -10,7 +10,22 @@ ENV APACHE_RUN_USER="www-data"
 ENV APACHE_RUN_GROUP="www-data"
 ENV APACHE_LOG_DIR="/var/log/apache2"
 
+# Copia um arquivo do host para um diretorio do container 
+# COPY index.html /var/www/html/
+
+# Copia um arquivo do host para um diretorio do container
+# Mas tem funcoes a mais que o COPY:
+# - Arquivos tar.gz ele descompacta automaticamente
+# - Links de download da internet ele faz o download automaticamente
+ADD index.html /var/www/html/
+
 LABEL description="Webserver"
+
+# Indica com qual usuario ira executar, se nao especificado eh root
+USER root
+
+# Quando acessar o container ira cair diretamente neste diretorio de trabalho
+WORKDIR /var/www/html/
 
 # Quando e mapeado um volume no dockerfile o docker cria automaticamente
 # na sua maquina este volume mas com um nome 'estranho' var/lib/docker/volumes
