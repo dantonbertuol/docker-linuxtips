@@ -1,0 +1,18 @@
+version: '3.7' # Versão do compose
+services:
+  web: # Serviço 'web'
+    image: nginx # Imagem do container
+    deploy:
+      replicas: 5 # Replicas do container
+      resources:
+        limits:
+          cpus: '0.1' # Limites de CPU
+          memory: 50M # Limites de memória
+      restart_policy:
+        condition: on-failure # Condicao de reinicio
+    ports: # Portas expostas
+    - "8080:80"
+    networks: # Rede que será 'deployado'
+    - webserver
+networks: # Criação das redes
+  webserver:

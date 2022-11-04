@@ -1,0 +1,25 @@
+version: '3.7'
+services: # Serviços
+  db: # Serviço do banco de dados
+    image: mysql:5.7 # Imagem do mysql
+    volumes:
+    - db_data:/var/lib/mysql # Nome do Volume : Onde será montado no container
+    environment: # Variáveis de ambiente
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+  
+  wordpress: # Serviço do Wordpress
+    depends_on: # Dependência do banco de dados (outro serviço)
+    - db
+    image: wordpress:latest # Imagem do Wordpress
+    ports: # Portas
+    - "8000:80"
+    environment: # Variáveis de ambiente
+      WORDPRESS_DB_HOST: db:3306 # Nome do serviço : Porta do serviço (automaticamente tem um DNS)
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+
+volumes: # Criação dos Volumes
+  db_data:
