@@ -1,0 +1,34 @@
+version: '3.7'
+services:
+  web: # Serviço web
+    image: nginx
+    deploy: 
+      placement: # Colocação do serviço
+        constraints: # Restrições - para a aplicação rodar o nó que ela vai rodar o label precisa ser UK
+          - node.labels.dc == UK
+      replicas: 5
+      resources: 
+        limits: 
+          cpus: '0.1'
+          memory: 50M
+      restart_policy: 
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - webserver
+  
+  visualizer: # Serviço visualizer serve para criar uma interface visual para ver os containers
+    image: dockersamples/visualizer:stable
+    ports: 
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement: # Somente executa nos nodes managers
+        constraints: [node.role == manager]
+    networks:
+      - webserver
+
+networks:
+  webserver:

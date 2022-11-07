@@ -1,0 +1,94 @@
+version: '3.7'
+services:
+  redis:
+    image: redis:alpine
+    ports: # Essa porta não tem bind, então não pode ser acessada externa ao cluster
+      - 6379
+    networks:
+      - frontend
+    deploy:
+      replicas: 2
+      update_config: # Quando fazer um update nesse serviço
+        parallelism: 1 # Faça um por vez
+        delay: 10s # Espere 10 segundos entre um e outro
+      rollback_config: # Quando der rollback
+        parallelism: 1 # Faça 1 por vez
+        delay: 5s # Espere 5 segundos entre um e outro
+        failure_action: continue # Se der erro, continue
+        monitor: 60s # Monitora a cada 60 segundos
+        order: stop-first # Pare o primeiro
+      restart_policy:
+        condition: on-failure
+  db:
+    image: postgres:9.4
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    environment: # Variáveis de ambiente
+      POSTGRES_USER: example
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: example
+    deploy:
+      placement:
+        constraints: [node.role == manager] # Só pode ser executado em um nó que seja manager
+  vote:
+    image: dockersamples/examplevotingapp_vote:before
+    ports:
+      - 5000:80
+    networks:
+      - frontend
+    depends_on:
+      - redis
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+  result:
+    image: dockersamples/examplevotingapp_result:before
+    ports:
+      - 5001:80
+    networks:
+      - backend
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  worker:
+    image: dockersamples/examplevotingapp_worker
+    networks:
+      - frontend
+      - backend
+    deploy:
+      mode: replicated # Se o mode fosse Global criaria automaticamente uma replica em cada node
+      replicas: 1
+      labels: [APP=VOTING]
+      restart_policy:
+        condition: on-failure
+        delay: 10s # Se der erro, espere 10 segundos para tentar novamente
+        max_attempts: 3 # Se der erro 3 vezes, pare de tentar
+        window: 120s # Se der erro, espere 120 segundos para tentar novamente
+      placement:
+        constraints: [node.role == manager]
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    stop_grace_period: 1m30s # Se o container não for parado em 1:30s depois do comando, dá um kill
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+networks:
+  frontend:
+  backend:
+volumes:
+  db-data:
